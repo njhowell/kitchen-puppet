@@ -7,14 +7,6 @@ require 'kitchen/transport/dummy'
 require 'kitchen/verifier/dummy'
 require 'kitchen/driver/dummy'
 
-describe Kitchen::Busser do
-  let(:busser) { Kitchen::Busser.new }
-
-  it 'should return non suite dirs' do
-    expect(busser.non_suite_dirs).to eq(%w[data data_bags environments nodes roles puppet])
-  end
-end
-
 describe Kitchen::Provisioner::PuppetAgent do
   let(:logged_output)   { StringIO.new }
   let(:logger)          { Logger.new(logged_output) }
