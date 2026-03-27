@@ -5,7 +5,7 @@ AllCops:
 
 Documentation:
   Enabled: false
-AlignParameters:
+ParameterAlignment:
   Enabled: true
 Encoding:
   Enabled: false
