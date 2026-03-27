@@ -1,19 +1,11 @@
-# encoding: UTF-8
+# frozen_string_literal: true
 
 source 'https://rubygems.org'
 
 gemspec
 
-gem 'kitchen-docker', '~> 2.6.0'
-gem 'librarian-puppet', '~> 3.0.0'
-gem 'rake', '~> 10.4.2'
-gem 'rspec', '~> 3.3.0'
-gem 'rubocop', '~> 0.49.0'
-gem 'simplecov', '~> 0.10'
-
-# group :integration do
-#   gem 'test-kitchen'
-#   # Until the fix for older ruby versions
-#   # is released to rubygems - get it from master
-#   gem 'kitchen-docker', github: 'portertech/kitchen-docker'
-# end
+gem 'librarian-puppet', '~> 3.0'
+gem 'rake', '~> 13.0'
+gem 'rspec', '~> 3.13'
+gem 'rubocop', '~> 1.65'
+gem 'simplecov', '~> 0.22'

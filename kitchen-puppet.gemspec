@@ -1,4 +1,4 @@
-# encoding: utf-8
+# frozen_string_literal: true
 
 $LOAD_PATH.unshift File.expand_path('../lib', __FILE__)
 require 'kitchen-puppet/version'
@@ -15,11 +15,8 @@ Gem::Specification.new do |s|
   s.files = candidates.sort
   s.platform      = Gem::Platform::RUBY
   s.require_paths = ['lib']
-  s.rubyforge_project = '[none]'
-  s.required_ruby_version = '>= 2.1'
-  s.add_dependency 'net-ssh', '>= 3'
-  s.add_dependency 'test-kitchen', '>= 1.4'
-  s.add_dependency 'librarian-puppet', '>= 3.0'
+  s.required_ruby_version = '>= 3.1'
+  s.add_dependency 'test-kitchen', '>= 3.0'
   s.description = <<-TEXT
   == DESCRIPTION:
 

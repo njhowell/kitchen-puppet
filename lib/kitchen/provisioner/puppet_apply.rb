@@ -26,17 +26,11 @@ require 'json'
 require 'kitchen'
 
 module Kitchen
-  class Busser
-    def non_suite_dirs
-      %w[data data_bags environments nodes roles puppet]
-    end
-  end
-
   module Configurable
     def platform_name
       instance.platform.name
     end
-  end
+  end unless Kitchen::Configurable.method_defined?(:platform_name)
 
   module Provisioner
     #
@@ -46,8 +40,8 @@ module Kitchen
       attr_accessor :tmp_dir
 
       default_config :require_puppet_collections, true
-      default_config :puppet_yum_collections_repo, 'https://yum.puppetlabs.com/puppet5/puppet5-release-el-6.noarch.rpm'
-      default_config :puppet_apt_collections_repo, 'http://apt.puppetlabs.com/puppet5-release-wheezy.deb'
+      default_config :puppet_yum_collections_repo, 'https://yum.puppet.com/puppet8-release-el-9.noarch.rpm'
+      default_config :puppet_apt_collections_repo, 'https://apt.puppet.com/puppet8-release-jammy.deb'
       default_config :puppet_coll_remote_path, '/opt/puppetlabs'
       default_config :puppet_version, nil
       default_config :facter_version, nil
@@ -56,7 +50,7 @@ module Kitchen
       default_config :hiera_package, 'hiera-puppet'
       default_config :hiera_writer_files, nil
       default_config :require_puppet_repo, true
-      default_config :require_chef_for_busser, true
+      default_config :require_chef_for_busser, false
       default_config :resolve_with_librarian_puppet, true
       default_config :resolve_with_r10k, false
       default_config :puppet_environment, nil
@@ -69,8 +63,8 @@ module Kitchen
       default_config :puppet_environment_hiera_config_path do |provisioner|
         provisioner.calculate_path('hiera.yaml', :file)
       end
-      default_config :puppet_apt_repo, 'http://apt.puppetlabs.com/puppetlabs-release-precise.deb'
-      default_config :puppet_yum_repo, 'https://yum.puppetlabs.com/puppetlabs-release-el-6.noarch.rpm'
+      default_config :puppet_apt_repo, 'https://apt.puppet.com/puppet8-release-jammy.deb'
+      default_config :puppet_yum_repo, 'https://yum.puppet.com/puppet8-release-el-9.noarch.rpm'
       default_config :chef_bootstrap_url, 'https://www.chef.io/chef/install.sh'
       default_config :puppet_windows_msi_url, nil
       default_config :puppet_logdest, nil
@@ -317,7 +311,7 @@ module Kitchen
           info("Installing Puppet Collections on #{puppet_platform}")
           <<-INSTALL
 
-          #{Util.shell_helpers}
+          #{shell_helpers}
           #{custom_pre_install_command}
           if [ ! -d "#{config[:puppet_coll_remote_path]}" ]; then
             if [ ! -f "#{config[:puppet_apt_collections_repo]}" ]; then
@@ -339,7 +333,7 @@ module Kitchen
           info("Installing Puppet Collections on #{puppet_platform}")
           <<-INSTALL
 
-          #{Util.shell_helpers}
+          #{shell_helpers}
           #{custom_pre_install_command}
           if [ ! -d "#{config[:puppet_coll_remote_path]}" ]; then
             echo "-----> #{sudo_env('yum')} -y --nogpgcheck install #{config[:puppet_yum_collections_repo]}"
@@ -386,7 +380,7 @@ module Kitchen
           info('Installing Puppet Collections, will try to determine platform os')
           <<-INSTALL
 
-            #{Util.shell_helpers}
+            #{shell_helpers}
             #{custom_pre_install_command}
             if [ ! -d "#{config[:puppet_coll_remote_path]}" ]; then
               if [ -f /etc/centos-release ] || [ -f /etc/redhat-release ] || [ -f /etc/oracle-release ] || \
@@ -464,7 +458,7 @@ module Kitchen
           INSTALL
         else
           <<-INSTALL
-          #{Util.shell_helpers}
+          #{shell_helpers}
           # install chef omnibus so that busser works as this is needed to run tests :(
           # TODO: work out how to install enough ruby
           # and set busser: { :ruby_bindir => '/usr/bin/ruby' } so that we dont need the
@@ -489,7 +483,7 @@ module Kitchen
         version = "-v #{config[:puppet_version]}" unless config[:puppet_version].nil?
 
         <<-INSTALL
-        #{Util.shell_helpers}
+        #{shell_helpers}
         if [ ! $(which puppet) ]; then
           echo "-----> Installing Puppet Omnibus"
           #{export_http_proxy_parm}
@@ -774,6 +768,24 @@ module Kitchen
         RUN
         info("Going to invoke puppet apply with: #{result}")
         result
+      end
+
+      # Returns a bash function that downloads a URL to a destination path,
+      # using wget or curl depending on what is available on the target system.
+      # This replaces the removed Kitchen::Util.shell_helpers from test-kitchen 2+.
+      def shell_helpers
+        <<-'SHELL'
+          do_download() {
+            url="$1"; dst="$2"
+            if command -v wget >/dev/null 2>&1; then
+              wget -O "$dst" "$url"
+            elif command -v curl >/dev/null 2>&1; then
+              curl -o "$dst" "$url"
+            else
+              echo "Neither wget nor curl found — cannot download $url" >&2; exit 1
+            fi
+          }
+        SHELL
       end
 
       protected

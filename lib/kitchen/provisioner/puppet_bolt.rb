@@ -28,7 +28,7 @@ module Kitchen
     def platform_name
       instance.platform.name
     end
-  end
+  end unless Kitchen::Configurable.method_defined?(:platform_name)
 
   module Provisioner
     #

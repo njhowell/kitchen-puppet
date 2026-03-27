@@ -27,12 +27,6 @@ require 'kitchen/provisioner/base'
 require 'kitchen/provisioner/puppet/librarian'
 
 module Kitchen
-  class Busser
-    def non_suite_dirs
-      %w[data data_bags environments nodes roles puppet]
-    end
-  end
-
   module Provisioner
     #
     # Puppet Agent provisioner.
@@ -48,10 +42,10 @@ module Kitchen
       default_config :puppet_version, nil
       default_config :facter_version, nil
       default_config :require_puppet_repo, true
-      default_config :require_chef_for_busser, true
+      default_config :require_chef_for_busser, false
 
-      default_config :puppet_apt_repo, 'http://apt.puppetlabs.com/puppetlabs-release-precise.deb'
-      default_config :puppet_yum_repo, 'https://yum.puppetlabs.com/puppetlabs-release-el-6.noarch.rpm'
+      default_config :puppet_apt_repo, 'https://apt.puppet.com/puppet8-release-jammy.deb'
+      default_config :puppet_yum_repo, 'https://yum.puppet.com/puppet8-release-el-9.noarch.rpm'
       default_config :chef_bootstrap_url, 'https://www.chef.io/chef/install.sh'
 
       default_config :puppet_agent_command, nil
@@ -106,7 +100,7 @@ module Kitchen
           version = ''
           version = "-v #{config[:puppet_version]}" if config[:puppet_version]
           <<-INSTALL
-            #{Util.shell_helpers}
+            #{shell_helpers}
 
             if [ ! -d "#{config[:puppet_omnibus_remote_path]}" ]; then
               echo "-----> Installing Puppet Omnibus"
@@ -175,7 +169,7 @@ module Kitchen
       def install_busser
         return unless config[:require_chef_for_busser]
         <<-INSTALL
-          #{Util.shell_helpers}
+          #{shell_helpers}
           # install chef omnibus so that busser works as this is needed to run tests :(
           # TODO: work out how to install enough ruby
           # and set busser: { :ruby_bindir => '/usr/bin/ruby' } so that we dont need the
@@ -245,6 +239,24 @@ module Kitchen
           puppet_debug_flag,
           puppet_whitelist_exit_code
         ].compact.join(' ')
+      end
+
+      # Returns a bash function that downloads a URL to a destination path,
+      # using wget or curl depending on what is available on the target system.
+      # This replaces the removed Kitchen::Util.shell_helpers from test-kitchen 2+.
+      def shell_helpers
+        <<-'SHELL'
+          do_download() {
+            url="$1"; dst="$2"
+            if command -v wget >/dev/null 2>&1; then
+              wget -O "$dst" "$url"
+            elif command -v curl >/dev/null 2>&1; then
+              curl -o "$dst" "$url"
+            else
+              echo "Neither wget nor curl found — cannot download $url" >&2; exit 1
+            fi
+          }
+        SHELL
       end
 
       protected

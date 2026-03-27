@@ -7,14 +7,6 @@ require 'kitchen/transport/dummy'
 require 'kitchen/verifier/dummy'
 require 'kitchen/driver/dummy'
 
-describe Kitchen::Busser do
-  let(:busser) { Kitchen::Busser.new }
-
-  it 'should return non suite dirs' do
-    expect(busser.non_suite_dirs).to eq(%w[data data_bags environments nodes roles puppet])
-  end
-end
-
 describe Kitchen::Provisioner::PuppetApply do
   let(:logged_output) { StringIO.new }
   let(:logger)        { Logger.new(logged_output) }
@@ -73,11 +65,11 @@ describe Kitchen::Provisioner::PuppetApply do
       end
 
       it 'should set yum collections repo' do
-        expect(provisioner[:puppet_yum_collections_repo]).to eq('https://yum.puppetlabs.com/puppet5/puppet5-release-el-6.noarch.rpm')
+        expect(provisioner[:puppet_yum_collections_repo]).to eq('https://yum.puppet.com/puppet8-release-el-9.noarch.rpm')
       end
 
       it 'should set apt collections repo' do
-        expect(provisioner[:puppet_apt_collections_repo]).to eq('http://apt.puppetlabs.com/puppet5-release-wheezy.deb')
+        expect(provisioner[:puppet_apt_collections_repo]).to eq('https://apt.puppet.com/puppet8-release-jammy.deb')
       end
 
       it 'should set puppet collections remote path' do
@@ -88,8 +80,8 @@ describe Kitchen::Provisioner::PuppetApply do
         expect(provisioner[:require_puppet_repo]).to eq(true)
       end
 
-      it 'Should require Chef for Busser' do
-        expect(provisioner[:require_chef_for_busser]).to eq(true)
+      it 'Should not require Chef for Busser by default' do
+        expect(provisioner[:require_chef_for_busser]).to eq(false)
       end
 
       it 'Should resolve with librarian' do
@@ -105,11 +97,11 @@ describe Kitchen::Provisioner::PuppetApply do
       end
 
       it 'Should set correct apt repo' do
-        expect(provisioner[:puppet_apt_repo]).to eq('http://apt.puppetlabs.com/puppetlabs-release-precise.deb')
+        expect(provisioner[:puppet_apt_repo]).to eq('https://apt.puppet.com/puppet8-release-jammy.deb')
       end
 
       it 'Should set correct yum repo' do
-        expect(provisioner[:puppet_yum_repo]).to eq('https://yum.puppetlabs.com/puppetlabs-release-el-6.noarch.rpm')
+        expect(provisioner[:puppet_yum_repo]).to eq('https://yum.puppet.com/puppet8-release-el-9.noarch.rpm')
       end
 
       it 'Should set correct chef bootstrap url' do
