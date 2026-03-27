@@ -64,8 +64,8 @@ describe Kitchen::Provisioner::PuppetAgent do
         expect(provisioner[:require_puppet_repo]).to eq(true)
       end
 
-      it 'Should require Chef for Busser' do
-        expect(provisioner[:require_chef_for_busser]).to eq(true)
+      it 'Should not require Chef for Busser by default' do
+        expect(provisioner[:require_chef_for_busser]).to eq(false)
       end
 
       it 'Should set puppet environment to nil' do
