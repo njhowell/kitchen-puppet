@@ -1,6 +1,7 @@
 # encoding: utf-8
+# frozen_string_literal: true
 
-require_relative '../../spec_helper.rb'
+require_relative '../../spec_helper'
 
 require 'kitchen/provisioner/puppet_apply'
 require 'kitchen/transport/dummy'

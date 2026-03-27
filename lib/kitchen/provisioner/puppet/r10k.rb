@@ -1,4 +1,5 @@
 # -*- encoding: utf-8 -*-
+# frozen_string_literal: true
 
 #
 # Author:: Fletcher Nichol (<fnichol@nichol.ca>) Neill Turner (<neillwturner@gmail.com>) Dennis Lerch (<dennis.lerch@transporeon.com>)
@@ -47,7 +48,7 @@ module Kitchen
           ::R10K::Git::Cache.settings[:cache_root] = '.r10k/git'
           ::R10K::Forge::ModuleRelease.settings[:cache_root] = '.r10k/cache'
 
-          pf = ::R10K::Puppetfile.new("", path, puppetfile)
+          pf = ::R10K::Puppetfile.new('', path, puppetfile)
           pf.load
           pf.modules.map(&:sync)
         end

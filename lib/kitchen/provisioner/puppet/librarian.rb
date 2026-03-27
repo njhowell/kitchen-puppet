@@ -1,4 +1,5 @@
 # -*- encoding: utf-8 -*-
+# frozen_string_literal: true
 
 #
 # Author:: Fletcher Nichol (<fnichol@nichol.ca>) Neill Turner (<neillwturner@gmail.com>)
@@ -34,6 +35,7 @@ module Kitchen
           attr_writer :logger
 
           def initialize(logger)
+            super()
             @logger = logger
           end
 

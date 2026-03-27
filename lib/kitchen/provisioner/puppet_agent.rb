@@ -1,4 +1,5 @@
 # -*- encoding: utf-8 -*-
+# frozen_string_literal: true
 
 #
 # Author:: Chris Lundquist (<chris.lundquist@github.com>) Neill Turner (<neillwturner@gmail.com>)
@@ -92,9 +93,9 @@ module Kitchen
         end
       end
 
-      # rubocop:disable Metrics/CyclomaticComplexity
       def install_command
         return unless config[:require_puppet_omnibus] || config[:require_puppet_repo]
+
         if config[:require_puppet_omnibus]
           info('Installing puppet using puppet omnibus')
           version = ''
@@ -164,10 +165,10 @@ module Kitchen
           end
         end
       end
-      # rubocop:enable Metrics/CyclomaticComplexity
 
       def install_busser
         return unless config[:require_chef_for_busser]
+
         <<-INSTALL
           #{shell_helpers}
           # install chef omnibus so that busser works as this is needed to run tests :(
@@ -197,6 +198,7 @@ module Kitchen
 
       def cleanup_sandbox
         return if sandbox_path.nil?
+
         debug("Cleaning up local sandbox in #{sandbox_path}")
         FileUtils.rmtree(sandbox_path)
       end
@@ -219,6 +221,7 @@ module Kitchen
 
       def run_command
         return config[:puppet_agent_command] unless config[:puppet_agent_command].nil?
+
         [
           custom_facts,
           sudo_env('puppet'),
@@ -311,15 +314,16 @@ module Kitchen
         config[:update_package_repos] ? "#{sudo_env('yum')} makecache" : nil
       end
 
-      def sudo_env(pm)
+      def sudo_env(pkg_mgr)
         s = https_proxy ? "https_proxy=#{https_proxy}" : nil
         p = http_proxy ? "http_proxy=#{http_proxy}" : nil
         n = no_proxy ? "no_proxy=#{no_proxy}" : nil
-        p || s ? "#{sudo('env')} #{p} #{s} #{n} #{pm}" : sudo(pm).to_s
+        p || s ? "#{sudo('env')} #{p} #{s} #{n} #{pkg_mgr}" : sudo(pkg_mgr).to_s
       end
 
       def custom_facts
         return nil if config[:custom_facts].none?
+
         bash_vars = config[:custom_facts].map { |k, v| "FACTER_#{k}=#{v}" }.join(' ')
         bash_vars = "export #{bash_vars};"
         debug(bash_vars)
@@ -421,7 +425,8 @@ module Kitchen
         elsif powershell?
           "; if(@(#{[config[:puppet_whitelist_exit_code]].join(', ')}) -contains $LASTEXITCODE) {exit 0} else {exit $LASTEXITCODE}"
         else
-          '; RC=$?; [ ' + [config[:puppet_whitelist_exit_code]].flatten.map { |x| "\$RC -eq #{x}" }.join(' -o ') + ' ] && exit 0; exit $RC'
+          format('; RC=$?; [ %s ] && exit 0; exit $RC',
+                 [config[:puppet_whitelist_exit_code]].flatten.map { |x| "$RC -eq #{x}" }.join(' -o '))
         end
       end
 

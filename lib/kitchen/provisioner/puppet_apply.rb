@@ -1,4 +1,5 @@
 # -*- encoding: utf-8 -*-
+# frozen_string_literal: true
 
 #
 # Author:: Chris Lundquist (<chris.lundquist@github.com>) Neill Turner (<neillwturner@gmail.com>)
@@ -26,11 +27,13 @@ require 'json'
 require 'kitchen'
 
 module Kitchen
-  module Configurable
-    def platform_name
-      instance.platform.name
+  unless Kitchen::Configurable.method_defined?(:platform_name)
+    module Configurable
+      def platform_name
+        instance.platform.name
+      end
     end
-  end unless Kitchen::Configurable.method_defined?(:platform_name)
+  end
 
   module Provisioner
     #
@@ -99,9 +102,8 @@ module Kitchen
 
       default_config :modules_path do |provisioner|
         modules_path = provisioner.calculate_path('modules')
-        if modules_path.nil? && provisioner.calculate_path('Puppetfile', :file).nil?
-          raise('No modules_path detected. Please specify one in .kitchen.yml')
-        end
+        raise('No modules_path detected. Please specify one in .kitchen.yml') if modules_path.nil? && provisioner.calculate_path('Puppetfile', :file).nil?
+
         modules_path
       end
 
@@ -196,6 +198,7 @@ module Kitchen
       # rubocop:disable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
       def install_command
         return unless config[:require_puppet_collections] || config[:require_puppet_repo] || config[:require_puppet_omnibus]
+
         if config[:require_puppet_omnibus]
           install_omnibus_command
         elsif config[:require_puppet_collections]
@@ -408,6 +411,7 @@ module Kitchen
 
       def install_deep_merge
         return unless config[:hiera_deep_merge]
+
         <<-INSTALL
           # Support for hash merge lookups to recursively merge hash keys
           if [[ $(#{sudo('gem')} list deep_merge -i) == 'false' ]]; then
@@ -419,6 +423,7 @@ module Kitchen
 
       def install_eyaml(gem_cmd = 'gem')
         return unless config[:hiera_eyaml]
+
         <<-INSTALL
           # A backend for Hiera that provides per-value asymmetric encryption of sensitive data
           if [[ $(#{sudo(gem_cmd)} list hiera-eyaml -i) == 'false' ]]; then
@@ -431,6 +436,7 @@ module Kitchen
 
       def install_eyaml_gpg(gem_cmd = 'gem')
         return unless config[:hiera_eyaml_gpg]
+
         <<-INSTALL
           # A backend for Hiera that provides per-value asymmetric encryption of sensitive data
           if [[ $(#{sudo(gem_cmd)} list hiera-eyaml-gpg -i) == 'false' ]]; then
@@ -445,6 +451,7 @@ module Kitchen
 
       def install_busser
         return unless config[:require_chef_for_busser]
+
         info("Install busser on #{puppet_platform}")
         case puppet_platform
         when /^windows.*/
@@ -497,6 +504,7 @@ module Kitchen
 
       def install_hiera
         return unless config[:install_hiera]
+
         <<-INSTALL
         #{sudo_env('apt-get')} -y install #{hiera_package}
         INSTALL
@@ -591,9 +599,11 @@ module Kitchen
 
       def cleanup_sandbox
         return if sandbox_path.nil?
+
         debug("Cleaning up local sandbox in #{sandbox_path}")
         FileUtils.rmtree(sandbox_path)
         return if remove_repo.nil?
+
         debug("Cleaning up remote sandbox: #{remove_repo}")
         instance.remote_exec remove_repo
       end
@@ -731,6 +741,7 @@ module Kitchen
 
       def run_command
         return config[:puppet_apply_command] unless config[:puppet_apply_command].nil?
+
         result = [
           facterlib,
           custom_facts,
@@ -793,6 +804,7 @@ module Kitchen
       def load_needed_dependencies!
         return unless File.exist?(puppetfile)
         return unless config[:resolve_with_librarian_puppet] || config[:resolve_with_r10k]
+
         if config[:resolve_with_librarian_puppet]
           require 'kitchen/provisioner/puppet/librarian'
           debug("Puppetfile found at #{puppetfile}, loading Librarian-Puppet")
@@ -845,9 +857,8 @@ module Kitchen
       end
 
       def puppet_environment_config
-        if config[:puppet_environment_config_path] && !puppet_environment
-          raise("ERROR: found environment config '#{config[:puppet_environment_config_path]}', however no 'puppet_environment' is specified. Please specify 'puppet_environment' or unset 'puppet_environment_config_path' in .kitchen.yml")
-        end
+        raise("ERROR: found environment config '#{config[:puppet_environment_config_path]}', however no 'puppet_environment' is specified. Please specify 'puppet_environment' or unset 'puppet_environment_config_path' in .kitchen.yml") if config[:puppet_environment_config_path] && !puppet_environment
+
         config[:puppet_environment_config_path]
       end
 
@@ -959,11 +970,13 @@ module Kitchen
 
       def puppet_dir
         return 'C:/ProgramData/PuppetLabs/puppet/etc' if powershell?
+
         config[:require_puppet_collections] ? '/etc/puppetlabs/puppet' : '/etc/puppet'
       end
 
       def puppet_environmentpath_remote_path
         return config[:puppet_environmentpath_remote_path] if config[:puppet_environmentpath_remote_path]
+
         if config[:puppet_version] =~ /^3/
           powershell? ? 'C:/ProgramData/PuppetLabs/puppet/etc' : '/etc/puppet/environments'
         else
@@ -973,6 +986,7 @@ module Kitchen
 
       def hiera_config_dir
         return 'C:/ProgramData/PuppetLabs/puppet/etc' if powershell?
+
         config[:require_puppet_collections] ? '/etc/puppetlabs/code' : '/etc/puppet'
       end
 
@@ -1016,6 +1030,7 @@ module Kitchen
         return nil if config[:require_puppet_collections]
         return nil if config[:puppet_environment]
         return nil if powershell?
+
         bash_vars = "export MANIFESTDIR='#{File.join(config[:root_path], 'manifests')}';"
         debug(bash_vars)
         bash_vars
@@ -1047,6 +1062,7 @@ module Kitchen
 
       def puppet_logdest_flag
         return nil unless config[:puppet_logdest]
+
         destinations = ''
         config[:puppet_logdest].each do |dest|
           destinations << "--logdest #{dest} "
@@ -1067,11 +1083,11 @@ module Kitchen
         config[:update_package_repos] ? "#{sudo_env('yum')} makecache" : nil
       end
 
-      def sudo_env(pm)
+      def sudo_env(pkg_mgr)
         s = https_proxy ? "https_proxy=#{https_proxy}" : nil
         p = http_proxy ? "http_proxy=#{http_proxy}" : nil
         n = no_proxy ? "no_proxy=#{no_proxy}" : nil
-        p || s ? "#{sudo('env')} #{p} #{s} #{n} #{pm}" : sudo(pm).to_s
+        p || s ? "#{sudo('env')} #{p} #{s} #{n} #{pkg_mgr}" : sudo(pkg_mgr).to_s
       end
 
       def remove_puppet_repo
@@ -1086,7 +1102,7 @@ module Kitchen
         config[:spec_files_remote_path]
       end
 
-      # rubocop:disable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
+      # rubocop:disable Metrics/CyclomaticComplexity
       def facterlib
         factpath = nil
         factpath = File.join(config[:root_path], 'facter').to_s if config[:install_custom_facts] && config[:custom_facts].any?
@@ -1094,15 +1110,17 @@ module Kitchen
         factpath = "#{factpath}:" if config[:facterlib] && !factpath.nil?
         factpath = "#{factpath}#{config[:facterlib]}" if config[:facterlib]
         return nil if factpath.nil?
+
         bash_vars = "export FACTERLIB='#{factpath}';"
         debug(bash_vars)
         bash_vars
       end
-      # rubocop:enable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
+      # rubocop:enable Metrics/CyclomaticComplexity
 
       def custom_facts
         return nil if config[:custom_facts].none?
         return nil if config[:install_custom_facts]
+
         if powershell?
           environment_vars = config[:custom_facts].map { |k, v| "$env:FACTER_#{k}='#{v}'" }.join('; ')
           environment_vars = "#{environment_vars};"
@@ -1136,7 +1154,8 @@ module Kitchen
         elsif powershell?
           "; if(@(#{[config[:puppet_whitelist_exit_code]].join(', ')}) -contains $LASTEXITCODE) {exit 0} else {exit $LASTEXITCODE}"
         else
-          '; RC=$?; [ ' + [config[:puppet_whitelist_exit_code]].flatten.map { |x| "\$RC -eq #{x}" }.join(' -o ') + ' ] && exit 0; exit $RC'
+          format('; RC=$?; [ %s ] && exit 0; exit $RC',
+                 [config[:puppet_whitelist_exit_code]].flatten.map { |x| "$RC -eq #{x}" }.join(' -o '))
         end
       end
 
@@ -1146,7 +1165,7 @@ module Kitchen
         case puppet_platform
         when 'ubuntu'
           case platform_version
-	  when '20.04'
+          when '20.04'
             # focal Repo
             'https://apt.puppetlabs.com/puppet-release-focal.deb'
           when '18.04'
@@ -1154,7 +1173,7 @@ module Kitchen
             'https://apt.puppetlabs.com/puppet-release-bionic.deb'
           when '16.04'
             # xenial Repo
-            'https://apt.puppetlabs.com/puppet-release-xenial.deb'          
+            'https://apt.puppetlabs.com/puppet-release-xenial.deb'
           when '14.10'
             # Utopic Repo
             'https://apt.puppetlabs.com/puppetlabs-release-utopic.deb'
@@ -1170,11 +1189,11 @@ module Kitchen
           end
         when 'debian'
           case platform_version.gsub(/\..*/, '')
- 	   when '10'
-             # Debian buster
-             'https://apt.puppetlabs.com/puppet-tools-release-buster.deb'
-           when '9'
-             # Debian xenial
+          when '10'
+            # Debian buster
+            'https://apt.puppetlabs.com/puppet-tools-release-buster.deb'
+          when '9'
+            # Debian xenial
             'https://apt.puppetlabs.com/puppet-tools-release-stretch.deb'
           when '8'
             # Debian Jessie
@@ -1197,7 +1216,7 @@ module Kitchen
       # rubocop:enable Metrics/CyclomaticComplexity
 
       def puppet_apt_repo_file
-        puppet_apt_repo.split('/').last if puppet_apt_repo
+        puppet_apt_repo&.split('/')&.last
       end
 
       def puppet_apt_coll_repo_file
@@ -1232,6 +1251,7 @@ module Kitchen
       def powershell?
         return true if powershell_shell?
         return true if puppet_platform =~ /^windows.*/
+
         false
       end
 
@@ -1288,6 +1308,7 @@ module Kitchen
 
       def prepare_facter_file
         return unless config[:facter_file]
+
         info 'Copying facter file'
         facter_dir = File.join(sandbox_path, 'facter')
         FileUtils.mkdir_p(facter_dir)
@@ -1297,6 +1318,7 @@ module Kitchen
       def prepare_facts
         return unless config[:install_custom_facts]
         return unless config[:custom_facts]
+
         info 'Installing custom facts'
         facter_dir = File.join(sandbox_path, 'facter')
         FileUtils.mkdir_p(facter_dir)
@@ -1357,6 +1379,7 @@ module Kitchen
         debug("Copying modules to directory: #{destination}")
         modules.each do |name, source|
           next unless File.directory?(source)
+
           debug("Copying module #{name} from #{source}...")
           target = "#{destination}/#{name}"
           FileUtils.mkdir_p(target) unless File.exist? target
@@ -1369,11 +1392,10 @@ module Kitchen
       end
 
       def read_self_module_name
-        if File.exist?(modulefile)
-          warn('Modulefile found but this is deprecated, ignoring it, see https://tickets.puppetlabs.com/browse/PUP-1188')
-        end
+        warn('Modulefile found but this is deprecated, ignoring it, see https://tickets.puppetlabs.com/browse/PUP-1188') if File.exist?(modulefile)
 
         return unless File.exist?(metadata_json)
+
         module_name = nil
         begin
           module_name = JSON.parse(IO.read(metadata_json))['name'].split('-').last
@@ -1395,6 +1417,7 @@ module Kitchen
 
       def prepare_enc
         return unless config[:puppet_enc]
+
         info 'Copying enc file'
         enc_dir = File.join(sandbox_path, 'enc')
         FileUtils.mkdir_p(enc_dir)
@@ -1437,25 +1460,25 @@ module Kitchen
 
       def prepare_hiera_data
         return unless hiera_data
+
         info('Preparing hiera data')
         tmp_hiera_dir = File.join(sandbox_path, 'hiera')
         debug("Copying hiera data from #{hiera_data} to #{tmp_hiera_dir}")
         FileUtils.mkdir_p(tmp_hiera_dir)
         FileUtils.cp_r(Dir.glob("#{hiera_data}/*"), tmp_hiera_dir)
-        if hiera_writer
-          hiera_writer.each do |file|
-            file.each do |filename, hiera_hash|
-              debug("Creating hiera yaml file #{tmp_hiera_dir}/#{filename}")
-              dir = File.join(tmp_hiera_dir, File.dirname(filename.to_s))
-              FileUtils.mkdir_p(dir)
-              output_file = open(File.join(dir, File.basename(filename.to_s)), 'w')
-              # convert json and back before converting to yaml to recursively convert symbols to strings, heh
-              output_file.write JSON[hiera_hash.to_json].to_yaml
-              output_file.close
-            end
+        hiera_writer&.each do |file|
+          file.each do |filename, hiera_hash|
+            debug("Creating hiera yaml file #{tmp_hiera_dir}/#{filename}")
+            dir = File.join(tmp_hiera_dir, File.dirname(filename.to_s))
+            FileUtils.mkdir_p(dir)
+            output_file = File.open(File.join(dir, File.basename(filename.to_s)), 'w')
+            # convert json and back before converting to yaml to recursively convert symbols to strings, heh
+            output_file.write JSON[hiera_hash.to_json].to_yaml
+            output_file.close
           end
         end
         return unless hiera_eyaml_key_path
+
         tmp_hiera_key_dir = File.join(sandbox_path, 'hiera_keys')
         debug("Copying hiera eyaml keys from #{hiera_eyaml_key_path} to #{tmp_hiera_key_dir}")
         FileUtils.mkdir_p(tmp_hiera_key_dir)
@@ -1464,6 +1487,7 @@ module Kitchen
 
       def prepare_spec_files
         return unless spec_files_path
+
         info('Preparing spec files')
         tmp_spec_dir = File.join(sandbox_path, 'spec')
         debug("Copying specs from #{spec_files_path} to #{tmp_spec_dir}")
@@ -1492,22 +1516,26 @@ module Kitchen
 
       def cp_command
         return 'cp -force' if powershell?
+
         'cp'
       end
 
       def rm_command
         return 'rm -force -recurse' if powershell?
+
         'rm -rf'
       end
 
       def mkdir_command
         return 'mkdir -force -path' if powershell?
+
         'mkdir -p'
       end
 
       def rm_command_paths(paths)
-        return :nil if paths.length.zero?
+        return :nil if paths.empty?
         return "#{rm_command} \"#{paths.join('", "')}\"" if powershell?
+
         "#{rm_command} #{paths.join(' ')}"
       end
     end

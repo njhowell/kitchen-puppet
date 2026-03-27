@@ -1,29 +1,46 @@
 AllCops:
+  NewCops: disable
+  SuggestExtensions: false
   Exclude:
     - 'vendor/**/*'
     - 'bundle/**/*'
 
-Documentation:
+Style/Documentation:
   Enabled: false
-ParameterAlignment:
+
+Layout/ParameterAlignment:
   Enabled: true
-Encoding:
+
+Style/Encoding:
   Enabled: false
-HashSyntax:
+
+Style/HashSyntax:
   Enabled: true
-LineLength:
+
+Layout/LineLength:
   Enabled: false
-BlockLength:
+
+Metrics/BlockLength:
   Enabled: false
-MethodLength:
+
+Metrics/MethodLength:
   Enabled: false
-ClassLength:
+
+Metrics/ClassLength:
   Enabled: false
-NumericLiterals:
-  MinDigits: 10
-AbcSize:
+
+Style/NumericLiterals:
   Enabled: false
-MultilineOperationIndentation:
+
+# Windows CRLF line endings are acceptable in this repo
+Layout/EndOfLine:
   Enabled: false
-RedundantFreeze:
+
+Metrics/AbcSize:
+  Enabled: false
+
+Layout/MultilineOperationIndentation:
+  Enabled: false
+
+Style/RedundantFreeze:
   Enabled: false

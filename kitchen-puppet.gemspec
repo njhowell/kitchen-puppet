@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-$LOAD_PATH.unshift File.expand_path('../lib', __FILE__)
+$LOAD_PATH.unshift File.expand_path('lib', __dir__)
 require 'kitchen-puppet/version'
 
 Gem::Specification.new do |s|
@@ -26,5 +26,5 @@ Gem::Specification.new do |s|
 
   Supports puppet apply, puppet agent, puppet bolt, hiera, hiera-eyaml, hiera-eyaml-gpg, custom facts, librarian-puppet, puppet collections
 
-TEXT
+  TEXT
 end

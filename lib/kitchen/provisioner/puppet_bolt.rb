@@ -1,4 +1,5 @@
 # -*- encoding: utf-8 -*-
+# frozen_string_literal: true
 
 #
 # Author:: Neill Turner (<neillwturner@gmail.com>
@@ -24,11 +25,13 @@ require 'json'
 require 'kitchen'
 
 module Kitchen
-  module Configurable
-    def platform_name
-      instance.platform.name
+  unless Kitchen::Configurable.method_defined?(:platform_name)
+    module Configurable
+      def platform_name
+        instance.platform.name
+      end
     end
-  end unless Kitchen::Configurable.method_defined?(:platform_name)
+  end
 
   module Provisioner
     #
@@ -70,9 +73,10 @@ module Kitchen
       # On Debian 9 or Ubuntu 16.04, run apt-get install -y make gcc ruby-dev
       # On Mac OS X, run xcode-select --install
       # Install Bolt as a gem by running gem install bolt
-      # rubocop:disable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
+      # rubocop:disable Metrics/CyclomaticComplexity
       def install_command
         return unless config[:require_bolt_repo] || config[:require_bolt_omnibus]
+
         if config[:require_bolt_omnibus]
           install_omnibus_command
         else
@@ -156,7 +160,7 @@ module Kitchen
           end
         end
       end
-      # rubocop:enable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
+      # rubocop:enable Metrics/CyclomaticComplexity
 
       def install_omnibus_command
         error('Installing bolt using an omnibus install script not currently supported')
@@ -197,9 +201,11 @@ module Kitchen
 
       def cleanup_sandbox
         return if sandbox_path.nil?
+
         debug("Cleaning up local sandbox in #{sandbox_path}")
         FileUtils.rmtree(sandbox_path)
         return if remove_repo.nil?
+
         debug("Cleaning up remote sandbox: #{remove_repo}")
         instance.remote_exec remove_repo
       end
@@ -245,11 +251,11 @@ module Kitchen
         config[:remove_bolt_repo] ? "#{sudo('rm')} -rf /tmp/kitchen " : nil
       end
 
-      def sudo_env(pm)
+      def sudo_env(pkg_mgr)
         s = https_proxy ? "https_proxy=#{https_proxy}" : nil
         p = http_proxy ? "http_proxy=#{http_proxy}" : nil
         n = no_proxy ? "no_proxy=#{no_proxy}" : nil
-        p || s ? "#{sudo('env')} #{p} #{s} #{n} #{pm}" : sudo(pm).to_s
+        p || s ? "#{sudo('env')} #{p} #{s} #{n} #{pkg_mgr}" : sudo(pkg_mgr).to_s
       end
 
       def proxy_parm
@@ -276,6 +282,7 @@ module Kitchen
       def powershell?
         return true if powershell_shell?
         return true if bolt_platform =~ /^windows.*/
+
         false
       end
 
