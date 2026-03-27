@@ -15,7 +15,7 @@ describe Kitchen::Provisioner::PuppetApply do
   let(:suite)         { Kitchen::Suite.new(name: 'suitey') }
   let(:verifier)      { Kitchen::Verifier::Dummy.new }
   let(:transport)     { Kitchen::Transport::Dummy.new }
-  let(:lifecycle_hooks) { Kitchen::LifecycleHooks.new(config) }
+  let(:lifecycle_hooks) { Kitchen::LifecycleHooks.new(config, state_file) }
   let(:state_file)    { double('state_file') }
   let(:state)         { {} }
   let(:env)           { {} }

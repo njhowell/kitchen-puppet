@@ -15,7 +15,7 @@ describe Kitchen::Provisioner::PuppetAgent do
   let(:suite)           { Kitchen::Suite.new(name: 'suitey') }
   let(:verifier)        { Kitchen::Verifier::Dummy.new }
   let(:transport)       { Kitchen::Transport::Dummy.new }
-  let(:lifecycle_hooks) { Kitchen::LifecycleHooks.new(config) }
+  let(:lifecycle_hooks) { Kitchen::LifecycleHooks.new(config, state_file) }
   let(:state_file)      { double('state_file') }
   let(:state)           { {} }
   let(:env)             { {} }
@@ -73,11 +73,11 @@ describe Kitchen::Provisioner::PuppetAgent do
       end
 
       it 'Should set correct apt repo' do
-        expect(provisioner[:puppet_apt_repo]).to eq('http://apt.puppetlabs.com/puppetlabs-release-precise.deb')
+        expect(provisioner[:puppet_apt_repo]).to eq('https://apt.puppet.com/puppet8-release-jammy.deb')
       end
 
       it 'Should set correct yum repo' do
-        expect(provisioner[:puppet_yum_repo]).to eq('https://yum.puppetlabs.com/puppetlabs-release-el-6.noarch.rpm')
+        expect(provisioner[:puppet_yum_repo]).to eq('https://yum.puppet.com/puppet8-release-el-9.noarch.rpm')
       end
 
       it 'Should set correct chef bootstrap url' do
